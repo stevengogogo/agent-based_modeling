@@ -1,141 +1,50 @@
-;;...AGENT-BASED MODELLING OF MITOCHONDRIAL POPULATIONS: LINKING SUB-CELLULAR DYNAMICS TO CELLULAR HOMEOSTASIS
-
-breed [nucs nuc]       ; nucleus
-breed [circles circle] ; circle --> only for visualization
-breed [mitos mito]     ; mitochondria
-breed [lysos lyso]     ; lysosomes
-
-;;...defining variables...................................................................................
-
-globals [
-  cx                 ;; x coordinate of the cell
-  cy                 ;; y coordinate of the cell
-  dim_dom            ;; dimension of the domain
-  diam_nuc           ;; diameter of the nucelus
-  dt                 ;; temporal increment
-  sec                ;; second
-  minute             ;; minute
-  hour               ;; hour
-  ds                 ;; spatial increment
-  mito-step_far      ;; mitochondrial step
-  mito-step_close    ;; mitochondrial step
-  EN_stress_level    ;; energetic stress
-  vel_far            ;; mitochondrial velocity
-  vel_close          ;; mitochondrial velocity
-  vel_far2           ;; mitochondrial velocity
-  vel_close2         ;; mitochondrial velocity
-  initial_tot_number ;; initial mitochondrial number
-  MR_th              ;; MR threshold
-  prob_fusIn         ;; probability of fusion
-  prob_fisIn         ;; probability of fission
-  prob_biogenesisIn  ;; probability of biogenesis
-  prob_damIn         ;; probability of damage
-  dam_th             ;; damage threshold
-  totmass            ;; total mass of mitochondria
-  critMass           ;; critical mass
-  min_mito_mass      ;; min mitochondrial mass
-  max_mito_mass      ;; max mitochondrial mass
-  small              ;; mitochondria with size <= 1
-  mid                ;; mitochondria with size in (1,2]
-  big                ;; mitochondria with size > 2
-  counter            ;; counter
-  freq_fusionIn      ;; fusion frequency
-  freq_fissionIn     ;; fission frequency
-  freq_degIn         ;; degradation frequency
-  freq_bioIn         ;; biogenesis frequency
-  arrmito            ;; array of all mitochondria
-  arrmitoDam         ;; array of all damaged mitochondria
-  totmassGreen       ;; total mass of GFP labeled mitochondria
-  totmassDam         ;; total mass of damaged mitochondria
-  totmassLow         ;; total mass of low damaged mitochondria
-  totmassHigh        ;; total mass of high damaged mitochondria
-]
-
-
-;;...PROPERTIES...................................................................................
-
-mitos-own [ damage_level MR_level dam ]
-
-
-
-;;...general setup...................................................................................
+patches-own [ heat ]
 
 to setup
-
   clear-all
+  set-default-shape turtles "circle"
+  create-turtles num-turtles   ; each turtle is like a heat source
+  [ setxy  random-xcor random-ycor     ; position the turtles randomly
+    ;hide-turtle   ; so we don't see the turtles themselves, just the heat they produce
+    set heat turtle-heat
+    set shape "mitochondria"
+  ] ; turtles set the patch variable
+  recolor-patches                       ; color patches according to heat
+  reset-ticks
+end
 
-  set cx 25
-  set cy 25
-  set dim_dom 50
-  set diam_nuc dim_dom / 3
-  set sec 1
-  set minute 60 * sec
-  set hour 60 * minute
-  set min_mito_mass 0.5
-  set max_mito_mass 3
-  set counter 0
-  set arrmito [ ]
-  set arrmitoDam [ ]
-  set totmassGreen 0
-  set totmassDam 0
-  set totmassLow 0
-  set totmassHigh 0
+to go
+  ask turtles [ set heat turtle-heat ]   ; turtles set the patch variable
+  if wander? [ ask turtles [ wander ] ]  ; movement of turtles is controlled by WANDER? switch
+  diffuse heat diffusion-rate            ; this causes the "spreading" of heat
+  recolor-patches                        ; color patches according to heat
+  tick
+end
 
+to wander ; turtle procedure
+  rt random 50 - random 50
+  fd turtle-speed
+end
 
-  set dt sec  ; (1sec)
-  set ds 1    ; 1 um per patch
-  set mito-step_far ( (2 * 0.5) / ds * dt ) ;; 0.5 um/s
-  set mito-step_close ( (2 * 0.22) / ds * dt ) ;; 0.22 um/s
-
-;;...CELL...................................................................................
-
-create-circles 1
-  [
-    set shape "cell"
-    set size dim_dom
-    ifelse (transmission)
-      [set color white]
-      [set color black]
-    set xcor cx
-    set ycor cy
+to recolor-patches  ;; color patches according to heat
+  ask patches [ set pcolor heat
+    set pcolor scale-color green heat 0 turtle-heat
   ]
 
-  ;; Nucleus
-  create-nucs 1
-  [
-    set shape "circle"
-    set size diam_nuc
-    set color 38.5
-    set xcor cx
-    set ycor cy
-  ]
+end
 
-  create-nucs 1
-  [
-    set shape "cell"
-    set size diam_nuc
-    set color 3
-    set xcor cx
-    set ycor cy
-  ]
 
-  ;; Background
-  if (not transmission) [ask patches [ set pcolor one-of [white] ] ]
-
-  ;;Mitochondria
-  while [counter < tot_mitochondria_mass ]
-  [
-
-  ]
+; Copyright 1997 Uri Wilensky.
+; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+253
 10
-647
-448
+745
+503
 -1
 -1
-13.0
+4.0
 1
 10
 1
@@ -145,22 +54,52 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-60
+60
+-60
+60
 1
 1
 1
 ticks
 30.0
 
-BUTTON
-27
-39
-90
-72
+SLIDER
+7
+133
+242
+166
+diffusion-rate
+diffusion-rate
+0
+1
+1.0
+0.1
+1
 NIL
+HORIZONTAL
+
+SLIDER
+7
+36
+242
+69
+num-turtles
+num-turtles
+1
+100
+14.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+51
+84
+121
+118
+setup
 setup
 NIL
 1
@@ -172,12 +111,23 @@ NIL
 NIL
 1
 
+SWITCH
+69
+268
+188
+301
+wander?
+wander?
+1
+1
+-1000
+
 BUTTON
-127
-45
-190
-78
-NIL
+133
+84
+202
+118
+go
 go
 T
 1
@@ -189,42 +139,122 @@ NIL
 NIL
 0
 
+SLIDER
+7
+178
+242
+211
+turtle-heat
+turtle-heat
+-139
+500
+500.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+7
+223
+242
+256
+turtle-speed
+turtle-speed
+0
+10
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+Diffusion Graphics is unlike most other NetLogo models, in that it really doesn't 'model' anything. It simply explores the power behind an interesting patch primitive: 'diffuse'.
+
+It's not intended to closely model real heat, just a number that behaves something like heat -- that slowly spreads itself evenly across a plane.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+In this model, the turtles are "hot spots" -- they set a certain value (a patch variable called 'heat') to the maximum level every time step. Each patch (through the 'diffuse' primitive) then shares its value of 'heat' with its surrounding patches.
+
+Here you can watch what happens as hot-spots interact with each other, as they move around, as their values become negative, or as the 'heat' slowly decays down to nothing. The whole point of the project is to give you an idea how patches interact via the 'diffuse' primitive. (Or maybe just to give you something nice to stare at if you're bored.)
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Two buttons, SETUP and GO, control execution of the model. As in most NetLogo models, the SETUP button will initialize the 'hot-spots' and other variables, preparing the model to be run. The GO button, a forever button, will then run the model.
+
+Four sliders and two switches determine the various properties of the model. Each of them can be set prior to initialization; most can be used mid-run to affect what will happen.
+
+NUM-TURTLES determines how many turtles there are. TURTLE-SPEED determines how fast they move. Each turtle sets the 'heat' of the patch it is over to TURTLE-HEAT.  Then that patch diffuses it into the nearby patches.
+
+The DIFFUSION-RATE slider is the rate at which the colors diffuse out from each patch. All patches diffuse their color value to their neighbors each time step. DIFFUSION-RATE is simply the fraction of this color leaked out.
+
+The WANDER? switch, if on, allows the turtles to move around the view. If the switch is off, the turtles will stay rooted in place.
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+Mainly what Diffusion Graphics will show you is how patch-color is diffused in NetLogo.  The graphical display may evoke fractal imagery, or a topographical landscape.  Diffusion Graphics really does bring about a topography of sorts, with the turtles being peaks, and the darkest colors being valleys. The model essentially tries to then smooth out these differences.
+
+Let the model run for a while with WANDER all off (all set to 0). Watch what happens to the 'terrain'. What do you predict will eventually happen?
+
+This model was built to please. Just play around with the sliders and switches. Later, try altering the code and see what works (and what doesn't work, too).
 
 ## THINGS TO TRY
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+Try setting TURTLE-HEAT to a very large number.  What happens?  What does this show you about NetLogo's color model?
+
+Try setting TURTLE-HEAT to a negative number.  What happens?  What does this show you about NetLogo's color model?
+
+Try setting the patch size to a small number for a richer display. Or make the patch size large, for a "zoomed in" perspective.
 
 ## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+Change it so that the NUM-TURTLES slider will the change the number of turtles on the fly, instead of requiring you to hit SETUP.
+
+Currently the position of each turtle is determined randomly at setup. Change the model so that the user may position turtles with the mouse.
+
+Color the patches a different way, perhaps along the traditional ROY-G-BIV (red, orange, yellow, green, blue, indigo, violet) spectrum.
 
 ## NETLOGO FEATURES
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+The Diffusion Graphics model was designed around the `diffuse` primitive.   `diffuse` is an observer primitive that takes two inputs, a patch variable and a number.  `diffuse` makes all the patches share that patch variable with their eight neighbors.  The second input is a number between 0 and 1.0 determines what fraction of the patch variable is shared.  (In this model, the amount shared is controlled by the CHANGE-RATE slider.)  So for example, if I ask the observer to `diffuse heat 0.5`, the observer tells each patch to give half of `heat` to the eight other patches.  If a patch had 80 to begin with, then it keeps 40 and gives 5 away to each neighbor.  The total value of `heat` for all the patches remains constant.
+
+There is also a 'diffuse4' primitive where the patches only share with their neighbors in the north, south, east, and west directions, not with their diagonal neighbors.
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+Diffusion (models real heat more closely)
 
-## CREDITS AND REFERENCES
+## HOW TO CITE
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+If you mention this model or the NetLogo software in a publication, we ask that you include the citations below.
+
+For the model itself:
+
+* Wilensky, U. (1997).  NetLogo Diffusion Graphics model.  http://ccl.northwestern.edu/netlogo/models/DiffusionGraphics.  Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+
+Please cite the NetLogo software as:
+
+* Wilensky, U. (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+
+## COPYRIGHT AND LICENSE
+
+Copyright 1997 Uri Wilensky.
+
+![CC BY-NC-SA 3.0](http://ccl.northwestern.edu/images/creativecommons/byncsa.png)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License.  To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
+
+Commercial licenses are also available. To inquire about commercial licenses, please contact Uri Wilensky at uri@northwestern.edu.
+
+This model was created as part of the project: CONNECTED MATHEMATICS: MAKING SENSE OF COMPLEX PHENOMENA THROUGH BUILDING OBJECT-BASED PARALLEL MODELS (OBPML).  The project gratefully acknowledges the support of the National Science Foundation (Applications of Advanced Technologies Program) -- grant numbers RED #9552950 and REC #9632612.
+
+This model was converted to NetLogo as part of the projects: PARTICIPATORY SIMULATIONS: NETWORK-BASED DESIGN FOR SYSTEMS LEARNING IN CLASSROOMS and/or INTEGRATED SIMULATION AND MODELING ENVIRONMENT. The project gratefully acknowledges the support of the National Science Foundation (REPP & ROLE programs) -- grant numbers REC #9814682 and REC-0126227. Converted from StarLogoT to NetLogo, 2001.
+
+<!-- 1997 2001 -->
 @#$#@#$#@
 default
 true
@@ -418,22 +448,6 @@ Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
-sheep
-false
-15
-Circle -1 true true 203 65 88
-Circle -1 true true 70 65 162
-Circle -1 true true 150 105 120
-Polygon -7500403 true false 218 120 240 165 255 165 278 120
-Circle -7500403 true false 214 72 67
-Rectangle -1 true true 164 223 179 298
-Polygon -1 true true 45 285 30 285 30 240 15 195 45 210
-Circle -1 true true 3 83 150
-Rectangle -1 true true 65 221 80 296
-Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
-Polygon -7500403 true false 276 85 285 105 302 99 294 83
-Polygon -7500403 true false 219 85 210 105 193 99 201 83
-
 square
 false
 0
@@ -517,13 +531,6 @@ Line -7500403 true 216 40 79 269
 Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
-
-wolf
-false
-0
-Polygon -16777216 true false 253 133 245 131 245 133
-Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
-Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
 
 x
 false

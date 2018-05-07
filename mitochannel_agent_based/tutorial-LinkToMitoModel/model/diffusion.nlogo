@@ -1,141 +1,40 @@
-;;...AGENT-BASED MODELLING OF MITOCHONDRIAL POPULATIONS: LINKING SUB-CELLULAR DYNAMICS TO CELLULAR HOMEOSTASIS
-
-breed [nucs nuc]       ; nucleus
-breed [circles circle] ; circle --> only for visualization
-breed [mitos mito]     ; mitochondria
-breed [lysos lyso]     ; lysosomes
-
-;;...defining variables...................................................................................
-
-globals [
-  cx                 ;; x coordinate of the cell
-  cy                 ;; y coordinate of the cell
-  dim_dom            ;; dimension of the domain
-  diam_nuc           ;; diameter of the nucelus
-  dt                 ;; temporal increment
-  sec                ;; second
-  minute             ;; minute
-  hour               ;; hour
-  ds                 ;; spatial increment
-  mito-step_far      ;; mitochondrial step
-  mito-step_close    ;; mitochondrial step
-  EN_stress_level    ;; energetic stress
-  vel_far            ;; mitochondrial velocity
-  vel_close          ;; mitochondrial velocity
-  vel_far2           ;; mitochondrial velocity
-  vel_close2         ;; mitochondrial velocity
-  initial_tot_number ;; initial mitochondrial number
-  MR_th              ;; MR threshold
-  prob_fusIn         ;; probability of fusion
-  prob_fisIn         ;; probability of fission
-  prob_biogenesisIn  ;; probability of biogenesis
-  prob_damIn         ;; probability of damage
-  dam_th             ;; damage threshold
-  totmass            ;; total mass of mitochondria
-  critMass           ;; critical mass
-  min_mito_mass      ;; min mitochondrial mass
-  max_mito_mass      ;; max mitochondrial mass
-  small              ;; mitochondria with size <= 1
-  mid                ;; mitochondria with size in (1,2]
-  big                ;; mitochondria with size > 2
-  counter            ;; counter
-  freq_fusionIn      ;; fusion frequency
-  freq_fissionIn     ;; fission frequency
-  freq_degIn         ;; degradation frequency
-  freq_bioIn         ;; biogenesis frequency
-  arrmito            ;; array of all mitochondria
-  arrmitoDam         ;; array of all damaged mitochondria
-  totmassGreen       ;; total mass of GFP labeled mitochondria
-  totmassDam         ;; total mass of damaged mitochondria
-  totmassLow         ;; total mass of low damaged mitochondria
-  totmassHigh        ;; total mass of high damaged mitochondria
-]
-
-
-;;...PROPERTIES...................................................................................
-
-mitos-own [ damage_level MR_level dam ]
-
-
-
-;;...general setup...................................................................................
+patches-own [heat]
 
 to setup
-
   clear-all
-
-  set cx 25
-  set cy 25
-  set dim_dom 50
-  set diam_nuc dim_dom / 3
-  set sec 1
-  set minute 60 * sec
-  set hour 60 * minute
-  set min_mito_mass 0.5
-  set max_mito_mass 3
-  set counter 0
-  set arrmito [ ]
-  set arrmitoDam [ ]
-  set totmassGreen 0
-  set totmassDam 0
-  set totmassLow 0
-  set totmassHigh 0
-
-
-  set dt sec  ; (1sec)
-  set ds 1    ; 1 um per patch
-  set mito-step_far ( (2 * 0.5) / ds * dt ) ;; 0.5 um/s
-  set mito-step_close ( (2 * 0.22) / ds * dt ) ;; 0.22 um/s
-
-;;...CELL...................................................................................
-
-create-circles 1
-  [
-    set shape "cell"
-    set size dim_dom
-    ifelse (transmission)
-      [set color white]
-      [set color black]
-    set xcor cx
-    set ycor cy
+  ask patches [
+    set heat random 212
+    set pcolor scale-color red heat 0 212
   ]
+  reset-ticks
+end
 
-  ;; Nucleus
-  create-nucs 1
-  [
-    set shape "circle"
-    set size diam_nuc
-    set color 38.5
-    set xcor cx
-    set ycor cy
+to go
+  diffuse heat 1
+  ask patches [
+    ;; warm up patches till they reach 212
+    set heat (heat + 5) mod 212
+    set pcolor scale-color red heat 0 212
   ]
+  tick
+end
 
-  create-nucs 1
-  [
-    set shape "cell"
-    set size diam_nuc
-    set color 3
-    set xcor cx
-    set ycor cy
-  ]
+to-report average-heat
+  report mean [heat] of patches
+end
 
-  ;; Background
-  if (not transmission) [ask patches [ set pcolor one-of [white] ] ]
 
-  ;;Mitochondria
-  while [counter < tot_mitochondria_mass ]
-  [
-
-  ]
+; Copyright 1998 Uri Wilensky.
+; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+262
 10
-647
-448
+675
+424
 -1
 -1
-13.0
+5.0
 1
 10
 1
@@ -145,22 +44,22 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
-1
-1
+-40
+40
+-40
+40
+0
+0
 1
 ticks
 30.0
 
 BUTTON
-27
-39
-90
-72
-NIL
+57
+50
+124
+83
+setup
 setup
 NIL
 1
@@ -173,10 +72,10 @@ NIL
 1
 
 BUTTON
-127
-45
-190
-78
+135
+50
+202
+83
 NIL
 go
 T
@@ -189,42 +88,88 @@ NIL
 NIL
 0
 
+PLOT
+9
+98
+252
+294
+Average Heat
+Time
+Avg Heat
+0.0
+50.0
+0.0
+212.0
+true
+false
+"" ""
+PENS
+"ave-heat" 1.0 0 -2674135 true "" "plot average-heat"
+
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+This project depicts a simple cellular automata model that resembles a pot of boiling water. Heat is applied evenly to the entire pot, but when the temperature of a patch reaches the boiling temperature, the bubble pops and that patch's temperature drops to zero.
+
+This process is analogous to the way in which a hot enough region of water gives up some heat by forming a bubble of steam. The water right around the steam bubble cools off for a moment.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+If all of a cell's neighbors are at the maximum value of 212, then that cell's new value will be 213 which gets wrapped down to zero. At the next tick, the presence of this zero-valued cell will lower the values of the cell's nearest neighbors.
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+Click the SETUP button to set up a random field of heat.
+
+Click the BOIL button to start adding heat to the pot and watch it boil. The redder the color, the hotter the patch (Black is very cool and white is very hot).
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+Watch how the added heat diffuses through the pot. When bubbles pop, the resulting drop in heat affects nearby patches too by taking away their heat.
 
-## THINGS TO TRY
-
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+What happens to the average heat in the pot?
 
 ## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+Try diffusing the heat more slowly through the system.
 
-## NETLOGO FEATURES
+Change the diffuse parameter from 1 to a smaller fraction.
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+Add "ice cubes".
 
-## RELATED MODELS
-
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+Add a heat sink, such as edges that constantly cool the liquid.
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+This model is described on page 79 in "Artificial Life Lab", by Rudy Rucker, published in 1993 by Waite Group Press.
+
+## HOW TO CITE
+
+If you mention this model or the NetLogo software in a publication, we ask that you include the citations below.
+
+For the model itself:
+
+* Wilensky, U. (1998).  NetLogo Boiling model.  http://ccl.northwestern.edu/netlogo/models/Boiling.  Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+
+Please cite the NetLogo software as:
+
+* Wilensky, U. (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+
+## COPYRIGHT AND LICENSE
+
+Copyright 1998 Uri Wilensky.
+
+![CC BY-NC-SA 3.0](http://ccl.northwestern.edu/images/creativecommons/byncsa.png)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License.  To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
+
+Commercial licenses are also available. To inquire about commercial licenses, please contact Uri Wilensky at uri@northwestern.edu.
+
+This model was created as part of the project: CONNECTED MATHEMATICS: MAKING SENSE OF COMPLEX PHENOMENA THROUGH BUILDING OBJECT-BASED PARALLEL MODELS (OBPML).  The project gratefully acknowledges the support of the National Science Foundation (Applications of Advanced Technologies Program) -- grant numbers RED #9552950 and REC #9632612.
+
+This model was converted to NetLogo as part of the projects: PARTICIPATORY SIMULATIONS: NETWORK-BASED DESIGN FOR SYSTEMS LEARNING IN CLASSROOMS and/or INTEGRATED SIMULATION AND MODELING ENVIRONMENT. The project gratefully acknowledges the support of the National Science Foundation (REPP & ROLE programs) -- grant numbers REC #9814682 and REC-0126227. Converted from StarLogoT to NetLogo, 2001.
+
+<!-- 1998 2001 -->
 @#$#@#$#@
 default
 true
@@ -418,22 +363,6 @@ Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
-sheep
-false
-15
-Circle -1 true true 203 65 88
-Circle -1 true true 70 65 162
-Circle -1 true true 150 105 120
-Polygon -7500403 true false 218 120 240 165 255 165 278 120
-Circle -7500403 true false 214 72 67
-Rectangle -1 true true 164 223 179 298
-Polygon -1 true true 45 285 30 285 30 240 15 195 45 210
-Circle -1 true true 3 83 150
-Rectangle -1 true true 65 221 80 296
-Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
-Polygon -7500403 true false 276 85 285 105 302 99 294 83
-Polygon -7500403 true false 219 85 210 105 193 99 201 83
-
 square
 false
 0
@@ -518,13 +447,6 @@ Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
 
-wolf
-false
-0
-Polygon -16777216 true false 253 133 245 131 245 133
-Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
-Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
-
 x
 false
 0
@@ -533,6 +455,8 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
 NetLogo 6.0.2
 @#$#@#$#@
+setup
+repeat 110 [ go ]
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

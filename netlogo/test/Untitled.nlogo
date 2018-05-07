@@ -1,132 +1,88 @@
-;;...AGENT-BASED MODELLING OF MITOCHONDRIAL POPULATIONS: LINKING SUB-CELLULAR DYNAMICS TO CELLULAR HOMEOSTASIS
-
-breed [nucs nuc]       ; nucleus
-breed [circles circle] ; circle --> only for visualization
-breed [mitos mito]     ; mitochondria
-breed [lysos lyso]     ; lysosomes
-
-;;...defining variables...................................................................................
-
-globals [
-  cx                 ;; x coordinate of the cell
-  cy                 ;; y coordinate of the cell
-  dim_dom            ;; dimension of the domain
-  diam_nuc           ;; diameter of the nucelus
-  dt                 ;; temporal increment
-  sec                ;; second
-  minute             ;; minute
-  hour               ;; hour
-  ds                 ;; spatial increment
-  mito-step_far      ;; mitochondrial step
-  mito-step_close    ;; mitochondrial step
-  EN_stress_level    ;; energetic stress
-  vel_far            ;; mitochondrial velocity
-  vel_close          ;; mitochondrial velocity
-  vel_far2           ;; mitochondrial velocity
-  vel_close2         ;; mitochondrial velocity
-  initial_tot_number ;; initial mitochondrial number
-  MR_th              ;; MR threshold
-  prob_fusIn         ;; probability of fusion
-  prob_fisIn         ;; probability of fission
-  prob_biogenesisIn  ;; probability of biogenesis
-  prob_damIn         ;; probability of damage
-  dam_th             ;; damage threshold
-  totmass            ;; total mass of mitochondria
-  critMass           ;; critical mass
-  min_mito_mass      ;; min mitochondrial mass
-  max_mito_mass      ;; max mitochondrial mass
-  small              ;; mitochondria with size <= 1
-  mid                ;; mitochondria with size in (1,2]
-  big                ;; mitochondria with size > 2
-  counter            ;; counter
-  freq_fusionIn      ;; fusion frequency
-  freq_fissionIn     ;; fission frequency
-  freq_degIn         ;; degradation frequency
-  freq_bioIn         ;; biogenesis frequency
-  arrmito            ;; array of all mitochondria
-  arrmitoDam         ;; array of all damaged mitochondria
-  totmassGreen       ;; total mass of GFP labeled mitochondria
-  totmassDam         ;; total mass of damaged mitochondria
-  totmassLow         ;; total mass of low damaged mitochondria
-  totmassHigh        ;; total mass of high damaged mitochondria
+patches-own
+[
+  old-temperature
+  temperature
 ]
 
-
-;;...PROPERTIES...................................................................................
-
-mitos-own [ damage_level MR_level dam ]
-
-
-
-;;...general setup...................................................................................
+globals
+[
+  plate-size
+  min-temp
+  max-temp
+]
 
 to setup
-
   clear-all
 
-  set cx 25
-  set cy 25
-  set dim_dom 50
-  set diam_nuc dim_dom / 3
-  set sec 1
-  set minute 60 * sec
-  set hour 60 * minute
-  set min_mito_mass 0.5
-  set max_mito_mass 3
-  set counter 0
-  set arrmito [ ]
-  set arrmitoDam [ ]
-  set totmassGreen 0
-  set totmassDam 0
-  set totmassLow 0
-  set totmassHigh 0
+  set plate-size round (0.6 * max-pxcor)
 
+  ask patches
 
-  set dt sec  ; (1sec)
-  set ds 1    ; 1 um per patch
-  set mito-step_far ( (2 * 0.5) / ds * dt ) ;; 0.5 um/s
-  set mito-step_close ( (2 * 0.22) / ds * dt ) ;; 0.22 um/s
-
-;;...CELL...................................................................................
-
-create-circles 1
   [
-    set shape "cell"
-    set size dim_dom
-    ifelse (transmission)
-      [set color white]
-      [set color black]
-    set xcor cx
-    set ycor cy
+    set pcolor gray
+    set-initial-temperatures
+    set-edge-temperature
   ]
 
-  ;; Nucleus
-  create-nucs 1
+  set min-temp min [old-temperature] of patches
+  set max-temp max [old-temperature] of patches
+  draw-legend
+  ask patches [ draw-plate ]
+  reset-ticks
+
+end
+
+to set-initial-temperatures
+  if ((abs pycor) < plate-size) and ((abs pxcor) < plate-size)
+  [set temperature initial-plate-temp]
+
+to draw-legend  ;; Patch Procedure
+  let x (1 + min-pxcor)
+  repeat 3
   [
-    set shape "circle"
-    set size diam_nuc
-    set color 38.5
-    set xcor cx
-    set ycor cy
+    let y 0
+    repeat 10
+    [
+      ask patch (x + 4) (y * 2 - 11) [ set temperature (y * 10) ]
+      ask patch (x + 4) (y * 2 - 10) [ set temperature (y * 10) ]
+      set y y + 1
+    ]
+    set x x + 1
   ]
 
-  create-nucs 1
+  set x (1 + min-pxcor)
+  repeat 3
   [
-    set shape "cell"
-    set size diam_nuc
-    set color 3
-    set xcor cx
-    set ycor cy
+    let y 0
+    repeat 10
+    [
+      ask patch (x + 4) (y * 2 - 11) [color-patch ]
+      ask patch (x + 4) (y * 2 - 10) [color-patch ]
+      set y y + 1
+    ]
+    set x x + 1
   ]
 
-  ;; Background
-  if (not transmission) [ask patches [ set pcolor one-of [white] ] ]
 
-  ;;Mitochondria
-  while [counter < tot_mitochondria_mass ]
+  set x (1 + min-pxcor)
+  repeat 3
   [
-
+    let y 0
+    repeat 11
+    [
+      if (x = (3 + min-pxcor)) [ ask patch  x (y * 2 - 12) [ set plabel (y * 10) ] ]
+    set y y + 1
+    ]
+    set x x + 1
   ]
+
+end
+
+to set-edge-temperatures
+  if (pxcor >= plate-size) and (pycor >= plate-size)
+  [set temperature 0.5 * (right-temp + top-temp)]
+
+  if (pxcor >= plate-size) and (pycor )
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -149,45 +105,11 @@ GRAPHICS-WINDOW
 16
 -16
 16
-1
-1
+0
+0
 1
 ticks
 30.0
-
-BUTTON
-27
-39
-90
-72
-NIL
-setup
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-127
-45
-190
-78
-NIL
-go
-T
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-0
 
 @#$#@#$#@
 ## WHAT IS IT?

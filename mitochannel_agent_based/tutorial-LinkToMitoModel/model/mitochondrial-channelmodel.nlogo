@@ -5,6 +5,11 @@ breed [circles circle] ; circle --> only for visualization
 breed [mitos mito]     ; mitochondria
 breed [lysos lyso]     ; lysosomes
 
+; Transcription factor
+patches-own [ tf ]
+
+
+
 ;;...defining variables...................................................................................
 
 globals [
@@ -49,12 +54,14 @@ globals [
   totmassDam         ;; total mass of damaged mitochondria
   totmassLow         ;; total mass of low damaged mitochondria
   totmassHigh        ;; total mass of high damaged mitochondria
+
 ]
 
 
 ;;...PROPERTIES...................................................................................
 
-mitos-own [ damage_level MR_level dam ]
+;;;;;;;;;;;;;;;
+mitos-own [ damage_level MR_level dam health]
 
 
 
@@ -63,6 +70,11 @@ mitos-own [ damage_level MR_level dam ]
 to setup
 
   clear-all
+
+  ;;;;;;;;;;;
+  patch-decay
+  recolor-patches
+
 
   set cx 25
   set cy 25
@@ -131,6 +143,10 @@ to setup
     create-mitos 1
     [
       set size dim
+
+      ;;;;;;;;;;
+      set health 100
+
       ifelse( size >= 2 )
       [set shape "mito2"]
       [set shape "mitochondria"]
@@ -232,8 +248,11 @@ end
 
 to go
 
-
-
+  ;;;;;;;;;;;;;;;;;
+  ask mitos [ set tf health ]
+  diffuse tf diffuse_rate
+  patch-decay
+  recolor-patches
 
   set freq_fusionIn freq_fusion * minute
   set freq_fissionIn freq_fission * minute
@@ -690,6 +709,21 @@ end
 to turn_nodir
   rt random-float 360 - random-float 360
 end
+
+to recolor-patches  ;; color patches according to heat
+  ask patches [ set pcolor tf
+    set pcolor scale-color green tf 0 100
+  ]
+
+end
+
+to patch-decay
+  ask patches [set tf tf * e ^ time-const]
+end
+
+to-report avg_tf
+ report mean [tf] of patches
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 10
@@ -761,7 +795,7 @@ tot_mitochondria_mass
 tot_mitochondria_mass
 0
 500
-300.0
+12.0
 1
 1
 NIL
@@ -806,7 +840,7 @@ MR_threshold
 MR_threshold
 0
 60
-11.0
+0.0
 1
 1
 min
@@ -839,7 +873,7 @@ prob_fusion
 prob_fusion
 0
 100
-50.0
+0.0
 5
 1
 %
@@ -854,7 +888,7 @@ prob_fission
 prob_fission
 0
 100
-50.0
+0.0
 5
 1
 %
@@ -932,7 +966,7 @@ ratio_lowHigh_damage
 ratio_lowHigh_damage
 0
 100
-80.0
+0.0
 5
 1
 %
@@ -1123,7 +1157,7 @@ freq_fusion
 freq_fusion
 0
 60
-5.0
+0.0
 1
 1
 min
@@ -1138,7 +1172,7 @@ freq_fission
 freq_fission
 0
 60
-5.0
+0.0
 1
 1
 min
@@ -1153,7 +1187,7 @@ freq_deg
 freq_deg
 1
 60
-1.0
+0.0
 1
 1
 min
@@ -1168,7 +1202,7 @@ freq_bio
 freq_bio
 1
 60
-24.0
+0.0
 1
 1
 min
@@ -1184,6 +1218,47 @@ recovery
 0
 1
 -1000
+
+SLIDER
+996
+37
+1168
+70
+time-const
+time-const
+-1
+1
+-0.03
+0.01
+1
+NIL
+HORIZONTAL
+
+MONITOR
+1107
+116
+1164
+161
+NIL
+avg_tf
+17
+1
+11
+
+SLIDER
+1201
+45
+1373
+78
+diffuse_rate
+diffuse_rate
+0
+1
+1.0
+0.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?

@@ -1,6 +1,6 @@
 # Review: keynotes in retrograde response
 
-__Table of Contents__
+Table of Contents
 - [Review: keynotes in retrograde response](#review--keynotes-in-retrograde-response)
     - [The yeast retrograde response as a model of intracellular signaling of mitochondrial dysfunction](#the-yeast-retrograde-response-as-a-model-of-intracellular-signaling-of-mitochondrial-dysfunction)
         - [Abstract](#abstract)
@@ -83,12 +83,6 @@ __Table of Contents__
             1. $\uparrow$ dephosphorylation of Rtg3 in cytoplasm
         2. Integral cofactor of transcriptional co-activator [SAGA-like complex](https://www.yeastgenome.org/go/GO:0046695), which is required for the induction of the retrograde response target gene CIT2, and it binds to CIT2 promoter
         3. Genome stability (unknown mechanism)
-        4. **Sense dysfunctional mitochondria- possible mechanisms**
-            1. $\downarrow$ of $\Delta \psi_{m}$ 
-                1. When yeast ages, $\Delta \psi_m \downarrow$, loses mtDNA, progressive activation of retrograde response.
-                2. Necessary and sufficient to induce retrograde response
-                3. how Rtg2 read $\Delta \psi_{m}$: unclear
-            2. ROS scavenger doesn't block signal
-            3. ATP$\downarrow$ doesn't involve
-
+        4. **Sense dysfunctional mitochondria**
+            1. [f](#Abstract)
 

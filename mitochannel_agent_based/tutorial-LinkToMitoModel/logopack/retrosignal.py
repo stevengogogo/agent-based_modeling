@@ -1,3 +1,0 @@
-"""
-Retrograde module
-"""
